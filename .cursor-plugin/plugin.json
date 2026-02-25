@@ -1,5 +1,5 @@
 {
-  "name": "securityreview-kit-cursor",
+  "name": "securityreview-kit",
   "version": "1.0.0",
   "description": "Cursor plugin for SecurityReviewAI threat modeling and security review workflows",
   "author": {
