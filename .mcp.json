@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "security-review-mcp": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "security-review-mcp@latest"
+      ],
+      "env": {
+        "SECURITY_REVIEW_API_URL": "${SECURITY_REVIEW_API_URL}",
+        "SECURITY_REVIEW_API_TOKEN": "${SECURITY_REVIEW_API_TOKEN}"
+      }
+    }
+  }
+}

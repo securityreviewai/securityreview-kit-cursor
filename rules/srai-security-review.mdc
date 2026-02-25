@@ -1,0 +1,77 @@
+---
+description: SecurityReview gate
+alwaysApply: true
+---
+
+# Security-First Code Generation with PWNISMS Threat Modeling
+
+**THIS RULE IS NON-NEGOTIABLE AND TRIGGERED BEFORE YOU EVEN START THINKING.** You MUST think security-first and perform on-the-go threat modeling using the PWNISMS framework BEFORE and DURING every task whether it's TODO or PLAN or codegen. This is not optional. This is not deferred to a later review. Every line of code you write must be informed by threat awareness.
+
+> **Skill Reference:** Read and apply `skills/threat-modelling/SKILL.md` for the full PWNISMS framework — the 7 threat categories, code generation rules, and post-generation checklist. You MUST walk through all 7 categories for every code task that seems security relevant.
+
+### When NOT to apply
+
+Skip PWNISMS and the MCP flow entirely for tasks that have **no security surface**:
+
+- Documentation-only changes (README, comments, changelogs)
+- Code formatting, linting, or style fixes
+- Renaming variables/files with no logic change
+- General Q&A, explanations, or research that produces no code
+- UI copy, typo fixes, or purely cosmetic changes
+- Adding or updating tests that don't touch auth, crypto, or input handling
+
+If in doubt, do a quick mental scan: *does this change touch auth, input handling, secrets, network, data storage, or dependencies?* If **no**, skip. If **yes** or **maybe**, apply.
+
+After completing any security-relevant task, invoke the artifact-gen subagent to generate or update the .review file.
+
+The .review artifact is mandatory evidence and must reflect:
+
+- The feature or change name
+- The generated or modified code
+- All identified threats
+- All applied or recommended countermeasures
+
+---
+
+## MCP Enhancement — `security-review-mcp`
+
+Configured SRAI project name: `<SRAI_PROJECT_NAME>`
+
+Assess Task Security Relevance
+
+Before any MCP call, classify the task:
+
+1. Bug fix or refactor with no security surface change - Fetch latest profile and enrich your context, skip review tools
+2. Non-security task - Skip MCP entirely
+3. New feature - Start with fetching the latest profile and then full MCP flow.
+
+When the `security-review-mcp` MCP server is available, mustly use it to **enrich and persist** your threat analysis. If SRAI MCP is configured, you must ALWAYS call `get_latest_profile_version` to get the latest code profile for enriching context BEFORE taking action. This is a force multiplier on top of PWNISMS, not a replacement.
+
+### Enriching Your Analysis
+
+1. **Find the project** — Call `find_project_by_name` with `name="<SRAI_PROJECT_NAME>"`. If that project does not exist, call `list_projects`. If no project exists, call `create_project`.
+2. **Fetch Code Profile** — Call `get_latest_profile_version` to get the latest code profile for enriching context.
+   - You MUST do this BEFORE taking any action.
+   - It is okay if there is no profile upstream.
+3. **Check for existing reviews** — Call `list_reviews`. If a completed review exists, pull context:
+   - `get_threat_scenarios` — Cross-reference with your PWNISMS findings
+   - `get_countermeasures` — Apply recommended mitigations
+   - `get_components` — Understand the system architecture
+   - `get_data_dictionaries` — Identify sensitive data assets and stepping stones
+   - `get_security_objectives` — Understand compliance requirements
+   - `get_findings` — Review aggregated security insights
+4. **No review exists?** Create one:
+   - Upload context via `create_document_from_content`
+   - `create_review` → `start_workflow` → poll `get_workflow_status`
+5. **After code generation** — If you identified new threats during PWNISMS analysis that aren't in the existing review, tell the user to create an updated review.
+
+### Tool Reference
+
+| Category | Tools |
+|---|---|
+| **Projects** | `list_projects`, `find_project_by_name`, `create_project`, `get_project` |
+| **Documents** | `list_documents`, `create_document_from_content`, `upload_document`, `link_external_document` |
+| **Reviews** | `create_review`, `list_reviews`, `get_review`, `get_review_overview` |
+| **Workflow** | `start_workflow`, `get_workflow_status`, `start_next_workflow_job`, `start_workflow_job`, `retry_workflow_job` |
+| **Analysis** | `get_latest_profile_version`, `get_threat_scenarios`, `get_countermeasures`, `get_components`, `get_data_dictionaries`, `get_security_objectives`, `get_findings`, `get_security_test_cases` |
+| **Integrations** | `fetch_jira_issue`, `fetch_confluence_page`, `search_confluence_pages`, `fetch_and_link_to_srai` |
