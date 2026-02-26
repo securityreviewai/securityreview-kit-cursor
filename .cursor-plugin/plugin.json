@@ -8,7 +8,9 @@
   "keywords": [
     "security-review",
     "threat-modeling",
+    "secure-coding",
     "mcp",
     "cursor"
-  ]
+  ],
+  "logo": "assets/srai-logo.svg"
 }
