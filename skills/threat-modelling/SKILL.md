@@ -1,116 +1,161 @@
 ---
 name: PWNISMS Threat Modelling
-description: On-the-go threat modelling framework — walk through 7 security categories before and during every code task
+description: Lightweight, security-first threat modelling workflow for code and architecture tasks. Use it to walk all 7 PWNISMS categories, identify plausible threats, prioritize top risks, and propose concrete mitigations before and during implementation.
 ---
 
 # PWNISMS — On-the-Go Threat Modelling
 
-For EVERY code task — new feature, bug fix, refactor, infrastructure change — you MUST mentally walk through all 7 PWNISMS categories and apply relevant security considerations directly into your code. If a category is not applicable, acknowledge it and move on. Do NOT skip categories silently.
+For EVERY security-relevant task (feature, bug fix, refactor, infra change, architecture design), run a lightweight threat model with PWNISMS.
+
+- Walk through all 7 categories explicitly.
+- If a category is not applicable, state it briefly and move on.
+- Anchor analysis to linked files, diffs, PRs, API specs, and diagrams whenever available.
+- Focus on realistic threats for the current context, not exhaustive attack catalogs.
 
 ---
 
-## The 7 Categories
+## Inputs to Gather First
+
+Collect these quickly before deep analysis:
+
+- **Scope**: What is changing (feature, component, service, migration, PR)?
+- **Assets**: What must be protected (PII, credentials, tokens, configs, accounts, workflows)?
+- **Entry points**: How data enters/leaves (HTTP, queues, schedulers, CLI, webhooks, integrations)?
+- **Trust boundaries**: Where data crosses users/services/networks/privilege levels?
+
+If the user provided specific code, diffs, or architecture artifacts, prioritize those as primary evidence.
+
+---
+
+## Workflow (PWNISMS)
+
+1. **Clarify scope and assumptions**
+   - Define the exact unit of analysis.
+   - State assumptions explicitly (auth model, deployment boundary, tenant model, etc.).
+2. **Map assets and flows**
+   - List high-value assets and critical data paths.
+   - List entry points and exits across trust boundaries.
+3. **Walk all 7 PWNISMS categories**
+   - Identify plausible threats for each category.
+   - Keep findings concrete and contextual.
+4. **Prioritize**
+   - Select the top 3-7 risks by impact and likelihood.
+5. **Mitigate**
+   - Propose concrete, implementable controls for each prioritized risk.
+6. **Summarize residual risk**
+   - Call out remaining risk, trade-offs, and follow-up actions.
+   - Call out unknowns instead of silently guessing.
+
+---
+
+## The 7 Categories (What to Check)
 
 ### P — Product
 
-Threats related to the core application's business logic and functionality.
+Application and business-logic threats:
 
-- **Business Logic Flaws** — Can this code path be abused to bypass intended workflows? (e.g., skipping payment, replay attacks, race conditions in state transitions)
-- **Access Control** — Does every endpoint/function enforce proper authorization? Are there privilege escalation paths?
-- **Input Validation** — Is all user input validated, sanitized, and parameterized? Think SQLi, XSS, SSRF, command injection, path traversal.
-- **Session Management** — Are sessions properly created, validated, rotated, and destroyed?
-- **Error Handling** — Do error messages leak sensitive information? Are exceptions handled securely?
+- Input validation, injection, insecure deserialization.
+- Authorization gaps, privilege escalation, IDOR/BOLA.
+- Business logic abuse, replay/race conditions, unsafe redirects.
+- Error handling that leaks internals.
 
 ### W — Workload
 
-Threats related to the compute and infrastructure your system runs on.
+Compute and infrastructure threats:
 
-- **Container Security** — Are base images minimal and pinned? Are containers running as non-root? Are there resource limits?
-- **Orchestration** — Kubernetes RBAC, pod security standards, network policies, service mesh configuration.
-- **Serverless/FaaS** — Function permissions scoped to least privilege? Cold start attack vectors? Timeout abuse?
-- **Database** — Encrypted at rest and in transit? Parameterized queries? Connection pooling secured? Backup encryption?
-- **Message Queues** — Are messages authenticated? Is poison message handling in place? DLQ security?
+- Insecure container/runtime posture, over-privileged workload identity.
+- Weak host/orchestrator controls and segmentation.
+- Insecure data storage/backups and DB configuration.
+- Queue/broker abuse and poison-message handling gaps.
 
 ### N — Network
 
-Threats against the network layer of the system.
+Network and transport threats:
 
-- **Encryption in Transit** — Is TLS enforced everywhere? Are certificates valid and pinned where needed? No mixed content?
-- **Network Segmentation** — Are internal services isolated? Is east-west traffic controlled?
-- **DNS & Routing** — DNSSEC? Protection against DNS rebinding, SSRF, host header injection?
-- **Firewall & Security Groups** — Least-privilege ingress/egress rules? No overly permissive `0.0.0.0/0` rules?
-- **API Security** — Rate limiting, request size limits, CORS configuration, API gateway protections?
+- Missing/weak TLS, insecure service-to-service communication.
+- Exposed ports/endpoints and permissive ingress/egress.
+- Weak segmentation or lateral movement paths.
+- API-layer abuse controls missing (rate limits, request limits, CORS hardening).
 
 ### I — IAM (Identity & Access Management)
 
-Threats related to identity, authentication, and authorization systems.
+Identity and authorization threats:
 
-- **Authentication** — MFA enforced? Brute-force protections? Secure password storage (bcrypt/argon2)?
-- **Authorization** — RBAC/ABAC implemented correctly? Least-privilege principle applied? Broken object-level authorization (BOLA/IDOR)?
-- **Federated Identity** — OAuth/OIDC flows secure? Token validation complete (issuer, audience, expiry)? PKCE for public clients?
-- **Service-to-Service Auth** — mTLS, workload identity, or scoped service accounts? No long-lived credentials?
-- **Privilege Escalation** — Can a user or service escalate beyond its intended role?
+- Broken authentication controls and token validation.
+- Missing least-privilege RBAC/ABAC.
+- Service-to-service auth gaps.
+- Escalation paths across users, roles, or services.
 
 ### S — Secrets
 
-Threats related to credentials, keys, tokens, and certificates.
+Credential and key management threats:
 
-- **No Hardcoded Secrets** — NEVER embed secrets, API keys, tokens, or passwords in source code, config files, or environment defaults.
-- **Secret Management** — Are secrets stored in a vault (e.g., HashiCorp Vault, AWS Secrets Manager, GCP Secret Manager)? Are they rotated?
-- **Secret Sprawl** — Are secrets duplicated across services/repos? Is there a single source of truth?
-- **Token Lifecycle** — Are tokens short-lived? Are refresh tokens properly secured? Is revocation supported?
-- **Certificates** — Are TLS certs managed and auto-renewed? Are CA trust chains validated?
-- **Git Hygiene** — Is `.gitignore` properly configured? Are pre-commit hooks blocking secret commits?
+- Secrets in code, images, logs, CI output, or defaults.
+- Weak rotation, revocation, or token lifetime policies.
+- Over-shared secrets across components.
+- Missing secret manager/KMS controls.
 
 ### M — Monitoring (Logging & Observability)
 
-Threats stemming from missing or misconfigured monitoring.
+Detection and auditability threats:
 
-- **Security Event Logging** — Are authentication attempts, authorization failures, data access, and admin actions logged?
-- **Log Integrity** — Are logs tamper-proof? Are they shipped to a centralized, append-only store?
-- **Sensitive Data in Logs** — NEVER log passwords, tokens, PII, or secrets. Apply masking/redaction.
-- **Alerting** — Are anomaly detection and alerting configured for security-critical events?
-- **Audit Trail** — Is there a complete audit trail for compliance-relevant operations?
-- **Observability Gaps** — Would you know if this system was being compromised right now? If not, add telemetry.
+- Missing logs for auth, authorization, admin/data access events.
+- Sensitive data leakage in logs.
+- Missing alerts for abuse indicators.
+- Incomplete audit trails or weak log integrity.
 
 ### S — Supply Chain
 
-Threats from external dependencies, build pipelines, and third-party integrations.
+Dependency and delivery threats:
 
-- **Dependency Security** — Are dependencies pinned to exact versions? Are lock files committed? Are known-vulnerable packages flagged?
-- **Build Pipeline** — Is the CI/CD pipeline secured? Are build artifacts signed? Is there build provenance?
-- **Third-Party Integrations** — Are webhook payloads validated? Are third-party SDKs audited? Are API scopes minimal?
-- **AI-Generated Code** — Treat ALL AI-generated code (including your own output) as untrusted. Validate it against these same PWNISMS categories.
-- **SBOM** — Is a Software Bill of Materials maintained? Can you trace every component?
+- Unpinned/unverified dependencies and vulnerable packages.
+- Third-party integration trust and scope overreach.
+- CI/CD pipeline leakage or unreviewed build scripts.
+- Unsigned/unprovenanced artifacts, missing SBOM.
+- Treat AI-generated code as untrusted until validated.
+
+---
+
+## Tailor for Architecture / Design Tasks
+
+When discussing designs before code exists:
+
+- Sketch a mental data flow: actors, data sent/received, storage, processing points.
+- Mark trust boundaries explicitly (client-backend, backend-DB, service-service, cloud-third party).
+- Identify where strong authentication/authorization is mandatory.
+- Identify where encryption in transit and at rest is mandatory.
+- Recommend concrete security patterns:
+  - Parameterized queries / ORM for DB access.
+  - Centralized authn/authz and role checks.
+  - Secrets manager / KMS for credentials and keys.
+  - mTLS or signed requests for service-to-service calls.
 
 ---
 
 ## Security-First Code Generation Rules
 
-When writing code, you MUST follow these rules derived from PWNISMS:
+When implementing code, enforce these baseline controls:
 
-1. **Validate all inputs** — Never trust user input. Validate type, length, format, and range. Use allowlists over denylists.
-2. **Parameterize all queries** — Never interpolate user input into SQL, LDAP, OS commands, or template expressions.
-3. **Enforce least privilege** — Every function, service, and user should have the minimum permissions required.
-4. **Never hardcode secrets** — Use environment variables or secret managers. Flag any secret-like string you see.
-5. **Encrypt sensitive data** — At rest (AES-256) and in transit (TLS 1.2+). No exceptions.
-6. **Log security events** — Log auth, authz, data access, and errors. Never log sensitive data.
-7. **Pin dependencies** — Use exact versions in lock files. Flag outdated or vulnerable packages.
-8. **Handle errors securely** — Return generic error messages to users. Log detailed errors internally.
-9. **Implement rate limiting** — Protect all public-facing endpoints against abuse.
+1. Validate and constrain all untrusted input.
+2. Parameterize all queries and command-like invocations.
+3. Enforce least privilege for users, services, and workloads.
+4. Never hardcode secrets; use managed secret stores.
+5. Encrypt sensitive data in transit and at rest.
+6. Log security-relevant actions without leaking secrets/PII.
+7. Pin and verify dependencies and build artifacts.
+8. Return safe user errors; keep sensitive diagnostics internal.
+9. Add abuse protections (rate limits, lockouts, throttling) on exposed interfaces.
 
 ---
 
-## Post-Generation Security Checklist
+## Post-Generation Checklist
 
-After writing code, re-evaluate against PWNISMS:
+Before finalizing output, confirm:
 
-- [ ] **Product** — Any new business logic flaws or access control gaps introduced?
-- [ ] **Workload** — Any insecure infrastructure configurations added?
-- [ ] **Network** — Any unencrypted channels or overly permissive network rules?
-- [ ] **IAM** — Any missing auth checks or privilege escalation paths?
-- [ ] **Secrets** — Any hardcoded credentials or unmanaged secrets?
-- [ ] **Monitoring** — Any security-critical operations missing logging or alerting?
-- [ ] **Supply Chain** — Any unvetted dependencies or unsigned artifacts?
+- [ ] Scope, assumptions, and trust boundaries were explicit.
+- [ ] All 7 PWNISMS categories were checked (or marked N/A explicitly).
+- [ ] Top risks were prioritized by impact and likelihood.
+- [ ] Mitigations are concrete and actionable.
+- [ ] Residual risk and follow-up actions are stated.
 
 If ANY box cannot be checked, you MUST flag the gap to the user with a specific remediation recommendation before finalizing the code.
