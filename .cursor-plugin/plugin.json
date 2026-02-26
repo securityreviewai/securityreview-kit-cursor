@@ -1,7 +1,7 @@
 {
   "name": "securityreview-kit",
   "version": "1.0.0",
-  "description": "Cursor plugin for SecurityReviewAI threat modeling and security review workflows",
+  "description": "Cursor plugin for SecurityReviewAI threat modeling and security review workflows. Build secure systems from he get go with on-the-go threat modelling built into your IDE as you code.",
   "author": {
     "name": "Debarshi Das"
   },
