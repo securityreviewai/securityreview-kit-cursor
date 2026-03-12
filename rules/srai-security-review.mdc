@@ -1,5 +1,5 @@
 ---
-description: SecurityReview gate
+description: SRAI Security Review gate — consult security-review-mcp before security-relevant code changes
 alwaysApply: true
 ---
 
@@ -7,7 +7,7 @@ alwaysApply: true
 
 **THIS RULE IS NON-NEGOTIABLE AND TRIGGERED BEFORE YOU EVEN START THINKING.** You MUST think security-first and perform on-the-go threat modeling using the PWNISMS framework BEFORE and DURING every task whether it's TODO or PLAN or codegen. This is not optional. This is not deferred to a later review. Every line of code you write must be informed by threat awareness.
 
-> **Skill Reference:** Read and apply `skills/threat-modelling/SKILL.md` for the full PWNISMS framework — the 7 threat categories, code generation rules, and post-generation checklist. You MUST walk through all 7 categories for every code task that seems security relevant.
+> **Skill Reference:** Read and apply `.cursor/skills/threat-modelling/SKILL.md` for the full PWNISMS framework — the 7 threat categories, code generation rules, and post-generation checklist. You MUST walk through all 7 categories for every code task that seems security relevant.
 
 ### When NOT to apply
 
