@@ -17,7 +17,7 @@ Configured SRAI project name: `<SRAI_PROJECT_NAME>`
 2. Build detailed profile content before any upload call.
    - Include purpose, boundaries, entry points, sensitive data, trust boundaries, integrations, threats, controls, and open risks.
 3. Resolve the SRAI project.
-   - If project name is `<SRAI_PROJECT_NAME>`, ask the user for the exact project name first.
+   - Use the configured project name by default; if it is missing or ambiguous, ask the user to confirm it.
    - Call `find_project_by_name` with `name="<SRAI_PROJECT_NAME>"`.
    - If missing, call `list_projects`; if still missing, call `create_project` with `name="<SRAI_PROJECT_NAME>"`.
 4. Upload generated markdown content with tool 11: `upload_document`.
@@ -30,4 +30,3 @@ Configured SRAI project name: `<SRAI_PROJECT_NAME>`
 6. Confirm the result.
    - Report project name, upload tool used, document name, and that processing is asynchronous.
    - If upload fails, return exact error details and next retry step.
-
